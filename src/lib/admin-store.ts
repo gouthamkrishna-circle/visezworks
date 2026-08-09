@@ -362,8 +362,28 @@ export function getStoredProjects(): ProjectItem[] {
 
 export function saveProjects(projects: ProjectItem[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+
+  // 1. Send to Firebase Cloud Database FIRST
   saveProjectsToCloud(projects);
+
+  // 2. Save to localStorage safely without throwing QuotaExceededError
+  try {
+    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+  } catch (err) {
+    console.warn("localStorage quota exceeded; stripping heavy media for local storage cache:", err);
+    try {
+      const sanitized = projects.map((p) => {
+        if (p.videoUrl && p.videoUrl.startsWith("data:")) {
+          const { videoUrl, ...rest } = p;
+          return rest;
+        }
+        return p;
+      });
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(sanitized));
+    } catch (e) {
+      console.warn("Relying on Firebase Cloud Database for project storage.", e);
+    }
+  }
 }
 
 export function getStoredInquiries(): InquiryItem[] {

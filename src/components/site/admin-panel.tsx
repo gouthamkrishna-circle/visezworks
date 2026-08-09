@@ -242,11 +242,12 @@ export function AdminPanel() {
   const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Upload to Firebase Cloud Storage for permanent 100% video CDN link
-      const cloudUrl = await uploadMediaToFirebase(file, "videos");
+      const id = "vid-" + Date.now();
+      // Save to IndexedDB (500MB+ storage limit, zero localStorage QuotaExceededError!)
+      const { mediaId, objectUrl } = await saveVideoFile(id, file);
 
       const v = document.createElement("video");
-      v.src = cloudUrl;
+      v.src = objectUrl;
       v.onloadedmetadata = () => {
         const ratio = v.videoWidth / v.videoHeight;
         let detectedAspect: "9:16" | "16:9" | "1:1" | "4:5" = "16:9";
@@ -257,12 +258,12 @@ export function AdminPanel() {
 
         setEditingProject((prev) => ({
           ...prev,
-          videoUrl: cloudUrl,
+          videoUrl: mediaId,
           aspectRatio: prev?.aspectRatio || detectedAspect,
         }));
       };
 
-      setEditingProject((prev) => ({ ...prev, videoUrl: cloudUrl }));
+      setEditingProject((prev) => ({ ...prev, videoUrl: mediaId }));
     }
   };
 
