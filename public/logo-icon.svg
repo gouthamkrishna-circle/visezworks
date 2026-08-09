@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 90" fill="none">
+  <!-- Orange Chevron -->
+  <path d="M 50 8 L 72 23 L 61 23 L 50 15 L 39 23 L 28 23 Z" fill="#f95700" />
+  
+  <!-- Stylized W Mark -->
+  <!-- Left long diagonal stroke -->
+  <polygon points="22,29 37,29 47,72 32,72" fill="#1e2530" className="dark:fill-slate-100" />
+  
+  <!-- Middle diagonal stroke -->
+  <polygon points="43,39 58,39 63,72 48,72" fill="#1e2530" className="dark:fill-slate-100" />
+  
+  <!-- Right upward diagonal stroke -->
+  <polygon points="60,39 77,29 64,61 48,72" fill="#1e2530" className="dark:fill-slate-100" />
+</svg>

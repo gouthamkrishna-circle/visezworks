@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 280" fill="none">
+  <!-- Icon Mark -->
+  <g transform="translate(200, 10) scale(1)">
+    <!-- Orange Chevron -->
+    <path d="M 50 8 L 72 23 L 61 23 L 50 15 L 39 23 L 28 23 Z" fill="#f95700" />
+    
+    <!-- Stylized W Mark -->
+    <polygon points="22,29 37,29 47,72 32,72" fill="#1e2530" />
+    <polygon points="43,39 58,39 63,72 48,72" fill="#1e2530" />
+    <polygon points="60,39 77,29 64,61 48,72" fill="#1e2530" />
+  </g>
+
+  <!-- Typography VISEZWORKS -->
+  <text x="250" y="180" text-anchor="middle" font-family="'Archivo', 'Plus Jakarta Sans', sans-serif" font-weight="900" font-size="42" letter-spacing="0.22em">
+    <tspan fill="#1e2530">VISE</tspan><tspan fill="#f95700">Z</tspan><tspan fill="#1e2530">WORKS</tspan>
+  </text>
+
+  <!-- Accent Lines and Tagline -->
+  <line x1="40" y1="218" x2="110" y2="218" stroke="#f95700" stroke-width="2" />
+  <text x="250" y="222" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-weight="700" font-size="14" letter-spacing="0.28em" fill="#1e2530">
+    VISION <tspan fill="#f95700">•</tspan> INNOVATE <tspan fill="#f95700">•</tspan> CREATE
+  </text>
+  <line x1="390" y1="218" x2="460" y2="218" stroke="#f95700" stroke-width="2" />
+</svg>
