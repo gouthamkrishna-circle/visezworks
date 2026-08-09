@@ -69,6 +69,7 @@ export function AdminPanel() {
     logs,
     categories,
     updateProjects,
+    deleteProject,
     updateInquiries,
     updateSiteSettings,
     addCategory,
@@ -269,8 +270,7 @@ export function AdminPanel() {
 
   const handleDeleteProject = (id: string, title: string) => {
     if (confirm(`Are you sure you want to delete "${title}"?`)) {
-      const updated = projects.filter((p) => p.id !== id);
-      updateProjects(updated, `Deleted Project: ${title}`);
+      deleteProject(id, title);
     }
   };
 
