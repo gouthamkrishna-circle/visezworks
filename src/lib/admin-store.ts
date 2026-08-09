@@ -1,19 +1,16 @@
 import { useState, useEffect } from "react";
 import {
   saveProjectsToCloud,
-  deleteProjectFromCloud,
   saveCategoriesToCloud,
   subscribeToCloudProjects,
   subscribeToCloudCategories,
 } from "./firebase";
-
 
 export const PROJECT_CATEGORIES = [
   "Web Development",
   "Video / Editing",
   "Digital Products",
   "Automations",
-  "AI Solutions",
   "Social Media",
 ] as const;
 
@@ -124,7 +121,6 @@ export const DEFAULT_CATEGORIES: string[] = [
   "Video / Editing",
   "Digital Products",
   "Automations",
-  "AI Solutions",
   "Social Media",
 ];
 
@@ -161,7 +157,6 @@ export function normalizeProjectCategory(cat: string): string {
     return "Video / Editing";
   if (cat === "Digital Products") return "Digital Products";
   if (cat === "Automations") return "Automations";
-  if (cat === "AI Solutions") return "AI Solutions";
   if (cat === "Social Media") return "Social Media";
   return cat || "Web Development";
 }
@@ -333,22 +328,6 @@ export function useAdminData() {
     notifyStoreChange();
   };
 
-  // Delete a single project — removes its Firestore doc AND updates the remaining list
-  const deleteProject = (id: string, title: string) => {
-    // 1. Delete the individual document from Firestore cms_projects collection
-    deleteProjectFromCloud(id);
-    // 2. Remove from local state
-    const updated = projects.filter((p) => p.id !== id);
-    setProjects(updated);
-    // 3. Update localStorage cache
-    try {
-      localStorage.setItem("visezworks_admin_projects", JSON.stringify(updated));
-    } catch {}
-    // 4. Log it
-    addLog(`Deleted Project: ${title}`, `Removed "${title}" from portfolio`);
-    notifyStoreChange();
-  };
-
   const updateCategories = (newCategories: string[], actionName?: string) => {
     setCategories(newCategories);
     saveCategories(newCategories);
@@ -406,7 +385,6 @@ export function useAdminData() {
     logs,
     categories,
     updateProjects,
-    deleteProject,
     updateInquiries,
     updateSiteSettings,
     updateCategories,
