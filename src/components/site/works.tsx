@@ -356,8 +356,9 @@ export function Works() {
               {/* Media Section: Direct Video Player or Image */}
               <div
                 className={`relative overflow-hidden rounded-xl border border-border bg-black mx-auto flex items-center justify-center ${
-                  activeModalProject.aspectRatio === "9:16"
-                    ? "max-w-[340px] aspect-[9/16] shadow-2xl"
+                  activeModalProject.aspectRatio === "9:16" ||
+                  (activeModalProject.category === "Video / Editing" && activeModalProject.aspectRatio !== "16:9" && activeModalProject.aspectRatio !== "1:1")
+                    ? "max-w-[350px] aspect-[9/16] max-h-[580px] shadow-2xl"
                     : activeModalProject.aspectRatio === "1:1"
                     ? "max-w-[420px] aspect-square"
                     : activeModalProject.aspectRatio === "4:5"
@@ -457,7 +458,7 @@ function ProjectCard({
   onOpenModal: () => void;
 }) {
   const isVideo = project.category === "Video / Editing" || !!project.videoUrl;
-  const is916 = project.aspectRatio === "9:16";
+  const is916 = project.aspectRatio === "9:16" || (project.category === "Video / Editing" && project.aspectRatio !== "16:9" && project.aspectRatio !== "1:1");
 
   return (
     <motion.div
@@ -472,13 +473,15 @@ function ProjectCard({
       <div
         className={`relative overflow-hidden rounded-xl border border-border bg-secondary shadow-sm transition-all duration-300 group-hover:border-primary/50 group-hover:shadow-xl ${
           is916
-            ? "aspect-[9/16] max-h-[460px] mx-auto"
+            ? "aspect-[9/16] max-h-[480px] mx-auto"
             : project.aspectRatio === "1:1"
             ? "aspect-square"
             : project.aspectRatio === "4:5"
             ? "aspect-[4/5]"
-            : isVideo
+            : project.aspectRatio === "16:9"
             ? "aspect-video"
+            : isVideo
+            ? "aspect-[9/16] max-h-[480px] mx-auto"
             : "aspect-[4/3]"
         }`}
       >
@@ -627,7 +630,7 @@ function ProjectVideoPlayer({
       muted={!controls}
       loop
       playsInline
-      preload="metadata"
+      preload="auto"
       style={{ transform: "translateZ(0)", willChange: "transform" }}
       className={className}
       ref={(el) => {
