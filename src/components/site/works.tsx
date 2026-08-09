@@ -584,6 +584,7 @@ function ProjectVideoPlayer({
 }) {
   const playableUrl = usePlayableVideoUrl(videoUrl);
   const [hasError, setHasError] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const src = playableUrl || videoUrl;
@@ -618,21 +619,43 @@ function ProjectVideoPlayer({
   }
 
   return (
-    <video
-      ref={videoRef}
-      src={src}
-      controls={controls}
-      controlsList="nodownload noplaybackrate"
-      disablePictureInPicture
-      onContextMenu={(e) => e.preventDefault()}
-      onError={() => setHasError(true)}
-      autoPlay={autoPlay}
-      muted
-      loop
-      playsInline
-      preload="auto"
-      style={{ transform: "translateZ(0)" }}
-      className={className}
-    />
+    <div className="relative size-full overflow-hidden">
+      {/* Thumbnail shown instantly — fades out once video can play */}
+      {posterImage && !videoReady && (
+        <img
+          src={posterImage}
+          alt="Video thumbnail"
+          className="absolute inset-0 size-full object-cover z-10 pointer-events-none"
+        />
+      )}
+
+      {/* Spinner if no thumbnail but video still buffering */}
+      {!posterImage && !videoReady && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-secondary/60">
+          <div className="size-7 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+        </div>
+      )}
+
+      <video
+        ref={videoRef}
+        src={src}
+        controls={controls}
+        controlsList="nodownload noplaybackrate"
+        disablePictureInPicture
+        onContextMenu={(e) => e.preventDefault()}
+        onError={() => setHasError(true)}
+        onCanPlay={() => {
+          setVideoReady(true);
+          if (autoPlay) videoRef.current?.play().catch(() => {});
+        }}
+        autoPlay={autoPlay}
+        muted
+        loop
+        playsInline
+        preload="auto"
+        style={{ transform: "translateZ(0)" }}
+        className={`${className} transition-opacity duration-700 ${videoReady ? "opacity-100" : "opacity-0"}`}
+      />
+    </div>
   );
 }

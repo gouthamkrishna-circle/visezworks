@@ -61,177 +61,8 @@ export type ActivityLog = {
   timestamp: string;
 };
 
-const DEFAULT_PROJECTS: ProjectItem[] = [
-  {
-    id: "p1",
-    title: "Northwind Studio",
-    description: "Marketing site and booking flow for a boutique production studio.",
-    details:
-      "Full responsive web development with interactive booking engine, optimized animations, and dark mode aesthetic built for high-tier agency conversions.",
-    category: "Web Development",
-    image:
-      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop",
-    link: "https://northwindstudio.example.com",
-    featured: true,
-    visibility: "Published",
-    createdAt: "2026-08-01",
-  },
-  {
-    id: "p2",
-    title: "Lumen Fintech",
-    description: "Conversion-focused landing page with interactive product tour.",
-    details:
-      "High-performance web architecture featuring dynamic live charts, custom web micro-interactions, and lead capture pipelines.",
-    category: "Web Development",
-    image:
-      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop",
-    link: "https://lumenfintech.example.com",
-    featured: true,
-    visibility: "Published",
-    createdAt: "2026-08-03",
-  },
-  {
-    id: "p3",
-    title: "Kinetic Launch Film",
-    description: "60-second promotional edit with motion typography and sound design.",
-    details:
-      "Cinematic promotional video editing engineered for high audience retention, fast-paced transitions, and rhythm-synced typography.",
-    category: "Video / Editing",
-    image:
-      "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=1200&auto=format&fit=crop",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    link: "https://youtube.com/watch?v=example1",
-    featured: true,
-    visibility: "Published",
-    createdAt: "2026-08-05",
-  },
-  {
-    id: "p4",
-    title: "Creator Shorts Pack",
-    description: "Short-form social edits built for retention and viral pacing.",
-    details:
-      "Series of high-impact vertical edits formatted for TikTok, Instagram Reels, and YouTube Shorts with dynamic caption animations.",
-    category: "Video / Editing",
-    image:
-      "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=1200&auto=format&fit=crop",
-    link: "https://instagram.com/p/example2",
-    featured: true,
-    visibility: "Published",
-    createdAt: "2026-08-06",
-  },
-  {
-    id: "p5",
-    title: "Nova UI Design System",
-    description: "Modular React UI kit and accessible token system for modern web apps.",
-    details:
-      "Comprehensive digital product UI framework complete with 40+ responsive components, Figma design variables, and accessible WCAG color scales.",
-    category: "Digital Products",
-    image:
-      "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?q=80&w=1200&auto=format&fit=crop",
-    link: "https://nova-ui.example.com",
-    featured: true,
-    visibility: "Published",
-    createdAt: "2026-08-04",
-  },
-  {
-    id: "p6",
-    title: "Pulse SaaS Dashboard Kit",
-    description: "Analytics dashboard starter template with prebuilt charts & auth.",
-    details:
-      "Ready-to-deploy digital product template tailored for SaaS founders, featuring real-time data visualizers and responsive layout presets.",
-    category: "Digital Products",
-    image:
-      "https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1200&auto=format&fit=crop",
-    link: "https://pulse-saas.example.com",
-    featured: false,
-    visibility: "Published",
-    createdAt: "2026-08-02",
-  },
-  {
-    id: "p7",
-    title: "ZapFlow Lead Sync Pipeline",
-    description: "Automated CRM lead router connecting Typeform, Slack, and HubSpot.",
-    details:
-      "Custom automated workflow system that eliminates manual data entry by routing incoming leads instantly to sales channels.",
-    category: "Automations",
-    image:
-      "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1200&auto=format&fit=crop",
-    link: "https://zapflow.example.com",
-    featured: true,
-    visibility: "Published",
-    createdAt: "2026-08-05",
-  },
-  {
-    id: "p8",
-    title: "AutoDoc Invoice Engine",
-    description: "Scheduled backend process for generating and emailing PDF invoices.",
-    details:
-      "Serverless automation process executing nightly billings, client notifications, and automated accounting sync.",
-    category: "Automations",
-    image:
-      "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1200&auto=format&fit=crop",
-    link: "https://autodoc.example.com",
-    featured: false,
-    visibility: "Published",
-    createdAt: "2026-08-03",
-  },
-  {
-    id: "p9",
-    title: "Synthetix AI Content Assistant",
-    description: "LLM-driven copywriting agent for auto-generating blog posts & copy.",
-    details:
-      "Custom AI solution built on Gemini API with prompt template libraries, tone controls, and instant SEO scoring.",
-    category: "AI Solutions",
-    image:
-      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop",
-    link: "https://synthetix.example.com",
-    featured: true,
-    visibility: "Published",
-    createdAt: "2026-08-07",
-  },
-  {
-    id: "p10",
-    title: "Cognitive Support Bot",
-    description: "Smart customer service AI trained on client knowledgebases.",
-    details:
-      "Embeddable intelligent support agent capable of resolving customer inquiries 24/7 with context-aware responses.",
-    category: "AI Solutions",
-    image:
-      "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop",
-    link: "https://cognitive-bot.example.com",
-    featured: false,
-    visibility: "Published",
-    createdAt: "2026-08-06",
-  },
-  {
-    id: "p11",
-    title: "Apex Viral Motion Reel Pack",
-    description: "Social media campaign kit with motion graphics and audio sync.",
-    details:
-      "30-day social media content bundle tailored for brand growth, high engagement rates, and platform algorithmic reach.",
-    category: "Social Media",
-    image:
-      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1200&auto=format&fit=crop",
-    link: "https://apex-reels.example.com",
-    featured: true,
-    visibility: "Published",
-    createdAt: "2026-08-06",
-  },
-  {
-    id: "p12",
-    title: "Aura Brand Instagram Kit",
-    description: "Cohesive aesthetic template suite for lifestyle and fashion brands.",
-    details:
-      "Turnkey social asset library including carousel templates, story highlights, and brand guidelines.",
-    category: "Social Media",
-    image:
-      "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?q=80&w=1200&auto=format&fit=crop",
-    link: "https://aura-social.example.com",
-    featured: false,
-    visibility: "Published",
-    createdAt: "2026-08-04",
-  },
-];
+const DEFAULT_PROJECTS: ProjectItem[] = [];
+
 
 const DEFAULT_INQUIRIES: InquiryItem[] = [
   {
@@ -461,16 +292,10 @@ export function useAdminData() {
   };
 
   useEffect(() => {
-    // Save defaults to local storage if empty
-    if (!localStorage.getItem(STORAGE_KEYS.PROJECTS)) saveProjects(DEFAULT_PROJECTS);
-    if (!localStorage.getItem(STORAGE_KEYS.INQUIRIES)) saveInquiries(DEFAULT_INQUIRIES);
-    if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) saveSettings(DEFAULT_SETTINGS);
-    if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES)) saveCategories(DEFAULT_CATEGORIES);
-
-    // Hydrate state from localStorage after client mount
+    // Hydrate from localStorage first (only if data exists there from a previous session)
     syncAll();
 
-    // Subscribe to Firebase Cloud Realtime Database (Multi-Admin Multi-Computer Real-Time Sync)
+    // Always subscribe to Firebase Cloud — cloud data always wins
     const unsubCloudProjects = subscribeToCloudProjects((cloudProjects) => {
       if (cloudProjects && cloudProjects.length > 0) {
         localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(cloudProjects));
