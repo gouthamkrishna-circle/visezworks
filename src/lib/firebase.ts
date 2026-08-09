@@ -103,26 +103,31 @@ function sanitizeForFirestore(obj: any): any {
 }
 
 /**
- * Strips base64 data: URLs from a project before cloud upload.
- * Data URLs can be hundreds of KB each. Only short https:// URLs are kept.
- * The original data URL stays in localStorage for the local admin session.
+ * Strips only blob: URLs and oversized video data URLs before cloud upload.
+ * Image data: URLs are KEPT since each project is its own Firestore doc
+ * (1MB limit per doc — compressed images are typically 50-300KB, well under).
  */
 function stripBlobsForCloud(project: any): any {
-  const MAX_FIELD_BYTES = 50_000; // 50 KB per field max
   const safe = { ...project };
 
+  // Always drop blob: URLs — they're browser-session-only, never work cross-device
   for (const key of ["image", "videoUrl"] as const) {
     const val = safe[key];
-    if (typeof val === "string") {
-      // Drop data: URLs and blob: URLs — they are local-only
-      if (val.startsWith("data:") || val.startsWith("blob:")) {
-        delete safe[key];
-      } else if (val.length > MAX_FIELD_BYTES) {
-        // Truncate any other suspiciously long strings
-        delete safe[key];
-      }
+    if (typeof val === "string" && val.startsWith("blob:")) {
+      delete safe[key];
     }
   }
+
+  // Only strip video data: URLs (can be massive MB), keep image data: URLs
+  if (typeof safe.videoUrl === "string" && safe.videoUrl.startsWith("data:")) {
+    delete safe.videoUrl;
+  }
+
+  // Safety: if image data URL exceeds 800KB, strip it to avoid hitting 1MB doc limit
+  if (typeof safe.image === "string" && safe.image.length > 800_000) {
+    delete safe.image;
+  }
+
   return safe;
 }
 
