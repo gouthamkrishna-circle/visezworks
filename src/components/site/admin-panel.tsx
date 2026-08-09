@@ -40,6 +40,7 @@ import {
 import { VisezWorksResponsiveLogo } from "./logo";
 import { Roadmap } from "./roadmap";
 import { saveVideoFile, compressImageFile } from "@/lib/media-storage";
+import { uploadMediaToFirebase } from "@/lib/firebase";
 import {
   useAdminData,
   ProjectItem,
@@ -232,20 +233,20 @@ export function AdminPanel() {
   const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const compressed = await compressImageFile(file);
-      setEditingProject((prev) => ({ ...prev, image: compressed }));
+      // Upload to Firebase Cloud Storage for permanent 100% cloud link
+      const cloudUrl = await uploadMediaToFirebase(file, "images");
+      setEditingProject((prev) => ({ ...prev, image: cloudUrl }));
     }
   };
 
   const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const id = "vid-" + Date.now();
-      const { mediaId, objectUrl } = await saveVideoFile(id, file);
+      // Upload to Firebase Cloud Storage for permanent 100% video CDN link
+      const cloudUrl = await uploadMediaToFirebase(file, "videos");
 
-      // Create dummy video element to detect natural width & height ratio
       const v = document.createElement("video");
-      v.src = objectUrl;
+      v.src = cloudUrl;
       v.onloadedmetadata = () => {
         const ratio = v.videoWidth / v.videoHeight;
         let detectedAspect: "9:16" | "16:9" | "1:1" | "4:5" = "16:9";
@@ -256,12 +257,12 @@ export function AdminPanel() {
 
         setEditingProject((prev) => ({
           ...prev,
-          videoUrl: mediaId,
+          videoUrl: cloudUrl,
           aspectRatio: prev?.aspectRatio || detectedAspect,
         }));
       };
 
-      setEditingProject((prev) => ({ ...prev, videoUrl: mediaId }));
+      setEditingProject((prev) => ({ ...prev, videoUrl: cloudUrl }));
     }
   };
 

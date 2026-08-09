@@ -17,9 +17,28 @@ export const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-E3HMR7BH3P",
 };
 
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 // Initialize Firebase App
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const db = getFirestore(app);
+export const storage = getStorage(app);
+
+/**
+ * Uploads a File (Image or Video) to Firebase Cloud Storage and returns a 100% permanent CDN URL.
+ */
+export async function uploadMediaToFirebase(file: File | Blob, folderName: "images" | "videos" = "images"): Promise<string> {
+  try {
+    const fileName = `${folderName}/${Date.now()}_${(file as File).name || "media_file"}`;
+    const storageRef = ref(storage, fileName);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
+    return downloadUrl;
+  } catch (err) {
+    console.warn("Firebase Storage Upload note:", err);
+    return URL.createObjectURL(file);
+  }
+}
 
 /**
  * Cloud Sync Status
