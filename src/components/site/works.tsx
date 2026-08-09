@@ -545,6 +545,24 @@ function ProjectCard({
   );
 }
 
+function getEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  if (url.includes("youtube.com/watch") || url.includes("youtu.be/")) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      return `https://www.youtube.com/embed/${match[2]}?autoplay=1&mute=1&loop=1&playlist=${match[2]}&controls=1`;
+    }
+  }
+  if (url.includes("vimeo.com/")) {
+    const match = url.match(/vimeo\.com\/(\d+)/);
+    if (match && match[1]) {
+      return `https://player.vimeo.com/video/${match[1]}?autoplay=1&muted=1&loop=1`;
+    }
+  }
+  return null;
+}
+
 function ProjectVideoPlayer({
   videoUrl,
   posterImage,
@@ -561,19 +579,35 @@ function ProjectVideoPlayer({
   const playableUrl = usePlayableVideoUrl(videoUrl);
   const [hasError, setHasError] = useState(false);
   const src = playableUrl || videoUrl;
+  const embedUrl = getEmbedUrl(src);
 
-  if (hasError || !src) {
+  if (embedUrl) {
+    return (
+      <iframe
+        src={embedUrl}
+        className={className}
+        allow="autoplay; encrypted-media; picture-in-picture"
+        allowFullScreen
+        title="Project Video Player"
+      />
+    );
+  }
+
+  if (hasError || !src || (src.startsWith("vid-") && !playableUrl)) {
     if (posterImage) {
       return <img src={posterImage} alt="Video preview poster" className={className} />;
     }
     return (
-      <div className="size-full bg-secondary/80 flex items-center justify-center p-4 text-center">
-        <div className="space-y-1">
-          <div className="size-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto text-primary font-bold">
-            ▶
+      <div className="size-full bg-gradient-to-br from-secondary/80 to-background flex items-center justify-center p-6 text-center border border-border/40 rounded-lg">
+        <div className="space-y-2">
+          <div className="size-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto text-primary font-bold shadow-sm">
+            <Play className="size-4 fill-primary ml-0.5" />
           </div>
-          <p className="font-bebas text-xs uppercase text-muted-foreground tracking-wider">
-            Media Preview Stream
+          <p className="font-bebas text-sm uppercase text-foreground tracking-wider">
+            Video Preview
+          </p>
+          <p className="text-[11px] text-muted-foreground max-w-xs">
+            Add a thumbnail image or public video URL in Admin Panel for global viewing.
           </p>
         </div>
       </div>
