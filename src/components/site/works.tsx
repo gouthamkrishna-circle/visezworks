@@ -45,13 +45,16 @@ const CAPABILITIES = [
 ];
 
 export function Works() {
-  const { projects, categories } = useAdminData();
+  const { projects } = useAdminData();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModalProject, setActiveModalProject] = useState<ProjectItem | null>(null);
 
   // Strictly filter out hidden projects for customer view
   const publishedProjects = projects.filter((p) => p.visibility !== "Hidden");
+
+  // Derive categories ONLY from actual published projects — not from admin defaults
+  const categories = Array.from(new Set(publishedProjects.map((p) => p.category)));
 
   // Determine active project list based on selected category tab & search query
   const getFilteredProjects = () => {
@@ -581,35 +584,10 @@ function ProjectVideoPlayer({
 }) {
   const playableUrl = usePlayableVideoUrl(videoUrl);
   const [hasError, setHasError] = useState(false);
-  const [isInView, setIsInView] = useState(controls);
-  const [isBuffering, setIsBuffering] = useState(true);
   const videoRef = React.useRef<HTMLVideoElement>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
 
   const src = playableUrl || videoUrl;
   const embedUrl = getEmbedUrl(src);
-
-  // IntersectionObserver: load src only when scrolled into viewport
-  React.useEffect(() => {
-    if (controls) { setIsInView(true); return; }
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            if (autoPlay && videoRef.current) videoRef.current.play().catch(() => {});
-          } else {
-            if (videoRef.current && !controls) videoRef.current.pause();
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: "100px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [autoPlay, controls]);
 
   if (embedUrl) {
     return (
@@ -640,41 +618,21 @@ function ProjectVideoPlayer({
   }
 
   return (
-    <div ref={containerRef} className="relative size-full">
-      {/* Poster shown instantly while video buffers */}
-      {posterImage && isBuffering && (
-        <img
-          src={posterImage}
-          alt="Video loading preview"
-          className="absolute inset-0 size-full object-cover z-10"
-          style={{ pointerEvents: "none" }}
-        />
-      )}
-
-      {/* Buffering spinner — only visible when no poster but still loading */}
-      {!posterImage && isBuffering && isInView && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-secondary/80">
-          <div className="size-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-        </div>
-      )}
-
-      <video
-        ref={videoRef}
-        src={isInView ? src : undefined}
-        poster={posterImage}
-        controls={controls}
-        controlsList="nodownload noplaybackrate"
-        disablePictureInPicture
-        onContextMenu={(e) => e.preventDefault()}
-        onError={() => { setHasError(true); setIsBuffering(false); }}
-        onCanPlay={() => { setIsBuffering(false); if (autoPlay && isInView) videoRef.current?.play().catch(() => {}); }}
-        muted={!controls}
-        loop
-        playsInline
-        preload={isInView ? "metadata" : "none"}
-        style={{ transform: "translateZ(0)", willChange: "transform" }}
-        className={`${className} ${isBuffering && posterImage ? "opacity-0" : "opacity-100"} transition-opacity duration-500`}
-      />
-    </div>
+    <video
+      ref={videoRef}
+      src={src}
+      controls={controls}
+      controlsList="nodownload noplaybackrate"
+      disablePictureInPicture
+      onContextMenu={(e) => e.preventDefault()}
+      onError={() => setHasError(true)}
+      autoPlay={autoPlay}
+      muted
+      loop
+      playsInline
+      preload="auto"
+      style={{ transform: "translateZ(0)" }}
+      className={className}
+    />
   );
 }
