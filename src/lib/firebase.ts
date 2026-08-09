@@ -5,6 +5,7 @@ import {
   setDoc,
   onSnapshot,
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Firebase Configuration
 export const firebaseConfig = {
@@ -17,17 +18,46 @@ export const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-E3HMR7BH3P",
 };
 
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+/**
+ * SSR-Safe Lazy Firebase App Initialization
+ */
+function getFirebaseApp() {
+  if (typeof window === "undefined") return null;
+  try {
+    return !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  } catch (e) {
+    return null;
+  }
+}
 
-// Initialize Firebase App
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+export function getDb() {
+  const app = getFirebaseApp();
+  if (!app) return null;
+  try {
+    return getFirestore(app);
+  } catch (e) {
+    return null;
+  }
+}
+
+export function getStorageInstance() {
+  const app = getFirebaseApp();
+  if (!app) return null;
+  try {
+    return getStorage(app);
+  } catch (e) {
+    return null;
+  }
+}
 
 /**
  * Uploads a File (Image or Video) to Firebase Cloud Storage and returns a 100% permanent CDN URL.
  */
 export async function uploadMediaToFirebase(file: File | Blob, folderName: "images" | "videos" = "images"): Promise<string> {
+  const storage = getStorageInstance();
+  if (!storage) {
+    return URL.createObjectURL(file);
+  }
   try {
     const fileName = `${folderName}/${Date.now()}_${(file as File).name || "media_file"}`;
     const storageRef = ref(storage, fileName);
@@ -57,13 +87,15 @@ export function getCloudStatus(): boolean {
  * Save Projects to Firebase Cloud Realtime Database
  */
 export async function saveProjectsToCloud(projects: any[]) {
+  const db = getDb();
+  if (!db) return false;
   try {
     const docRef = doc(db, "cms", "projects_data");
     await setDoc(docRef, { projects, updatedAt: new Date().toISOString() });
     setCloudStatus(true);
     return true;
   } catch (err: any) {
-    console.error("Firebase Cloud Save Error:", err);
+    console.warn("Firebase Cloud Save Note:", err);
     setCloudStatus(false);
     return false;
   }
@@ -73,13 +105,15 @@ export async function saveProjectsToCloud(projects: any[]) {
  * Save Categories to Firebase Cloud Realtime Database
  */
 export async function saveCategoriesToCloud(categories: string[]) {
+  const db = getDb();
+  if (!db) return false;
   try {
     const docRef = doc(db, "cms", "categories_data");
     await setDoc(docRef, { categories, updatedAt: new Date().toISOString() });
     setCloudStatus(true);
     return true;
   } catch (err: any) {
-    console.error("Firebase Categories Save Error:", err);
+    console.warn("Firebase Categories Save Note:", err);
     return false;
   }
 }
@@ -88,6 +122,10 @@ export async function saveCategoriesToCloud(categories: string[]) {
  * Listen for Real-Time Project Updates across all computers and browsers worldwide
  */
 export function subscribeToCloudProjects(callback: (projects: any[]) => void) {
+  if (typeof window === "undefined") return () => {};
+  const db = getDb();
+  if (!db) return () => {};
+
   try {
     const docRef = doc(db, "cms", "projects_data");
     return onSnapshot(
@@ -112,6 +150,10 @@ export function subscribeToCloudProjects(callback: (projects: any[]) => void) {
  * Listen for Real-Time Category Updates across all computers
  */
 export function subscribeToCloudCategories(callback: (categories: string[]) => void) {
+  if (typeof window === "undefined") return () => {};
+  const db = getDb();
+  if (!db) return () => {};
+
   try {
     const docRef = doc(db, "cms", "categories_data");
     return onSnapshot(
