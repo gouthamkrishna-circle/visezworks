@@ -50,13 +50,15 @@ export function getStorageInstance() {
   }
 }
 
+import { compressImageFile } from "./media-storage";
+
 /**
- * Uploads a File (Image or Video) to Firebase Cloud Storage and returns a 100% permanent CDN URL.
+ * Uploads a File (Image or Video) to Firebase Cloud Storage or returns a compressed Firestore-ready DataURL on CORS error.
  */
 export async function uploadMediaToFirebase(file: File | Blob, folderName: "images" | "videos" = "images"): Promise<string> {
   const storage = getStorageInstance();
   if (!storage) {
-    return URL.createObjectURL(file);
+    return await compressImageFile(file);
   }
   try {
     const fileName = `${folderName}/${Date.now()}_${(file as File).name || "media_file"}`;
@@ -64,9 +66,9 @@ export async function uploadMediaToFirebase(file: File | Blob, folderName: "imag
     const snapshot = await uploadBytes(storageRef, file);
     const downloadUrl = await getDownloadURL(snapshot.ref);
     return downloadUrl;
-  } catch (err) {
-    console.warn("Firebase Storage Upload note:", err);
-    return URL.createObjectURL(file);
+  } catch (err: any) {
+    console.warn("Firebase Storage CORS Warning (saving via Firestore Cloud Database):", err);
+    return await compressImageFile(file);
   }
 }
 
