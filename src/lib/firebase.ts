@@ -7,14 +7,14 @@ import {
 } from "firebase/firestore";
 
 // Firebase Configuration
-// Admin can update these credentials from Firebase Console (https://console.firebase.google.com)
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDemoVisezWorksKey123456789",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "visezworks.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "visezworks-cms",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "visezworks-cms.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "109876543210",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:109876543210:web:abc123def456789",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAqm1lP2BGSyPF--SvhohWfpP8kcoj4i0M",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "visezworks-f0187.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "visezworks-f0187",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "visezworks-f0187.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "774572746662",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:774572746662:web:0b1be6d3b6dc6ebfc2d167",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-E3HMR7BH3P",
 };
 
 // Initialize Firebase App
