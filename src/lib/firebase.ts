@@ -43,8 +43,8 @@ export async function saveProjectsToCloud(projects: any[]) {
     await setDoc(docRef, { projects, updatedAt: new Date().toISOString() });
     setCloudStatus(true);
     return true;
-  } catch (err) {
-    console.warn("Firebase sync note (falling back to Local Storage):", err);
+  } catch (err: any) {
+    console.error("Firebase Cloud Save Error:", err);
     setCloudStatus(false);
     return false;
   }
@@ -59,8 +59,8 @@ export async function saveCategoriesToCloud(categories: string[]) {
     await setDoc(docRef, { categories, updatedAt: new Date().toISOString() });
     setCloudStatus(true);
     return true;
-  } catch (err) {
-    console.warn("Firebase sync note:", err);
+  } catch (err: any) {
+    console.error("Firebase Categories Save Error:", err);
     return false;
   }
 }
