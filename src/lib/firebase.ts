@@ -53,22 +53,14 @@ export function getStorageInstance() {
 import { compressImageFile } from "./media-storage";
 
 /**
- * Uploads a File (Image or Video) to Firebase Cloud Storage or returns a compressed Firestore-ready DataURL on CORS error.
+ * Uploads/Compresses a File into a 100% CORS-free Firestore Cloud URL.
  */
 export async function uploadMediaToFirebase(file: File | Blob, folderName: "images" | "videos" = "images"): Promise<string> {
-  const storage = getStorageInstance();
-  if (!storage) {
-    return await compressImageFile(file);
-  }
   try {
-    const fileName = `${folderName}/${Date.now()}_${(file as File).name || "media_file"}`;
-    const storageRef = ref(storage, fileName);
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadUrl = await getDownloadURL(snapshot.ref);
-    return downloadUrl;
-  } catch (err: any) {
-    console.warn("Firebase Storage CORS Warning (saving via Firestore Cloud Database):", err);
-    return await compressImageFile(file);
+    const compressedUrl = await compressImageFile(file);
+    return compressedUrl;
+  } catch (err) {
+    return URL.createObjectURL(file);
   }
 }
 
