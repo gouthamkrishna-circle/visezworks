@@ -78,6 +78,24 @@ export function getCloudStatus(): boolean {
 }
 
 /**
+ * Recursively removes undefined fields from an object so Firestore never
+ * throws "Unsupported field value: undefined".
+ */
+function sanitizeForFirestore(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(sanitizeForFirestore);
+  if (obj !== null && typeof obj === "object") {
+    const clean: Record<string, any> = {};
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      if (val === undefined) continue; // drop undefined fields
+      clean[key] = sanitizeForFirestore(val);
+    }
+    return clean;
+  }
+  return obj;
+}
+
+/**
  * Save Projects to Firebase Cloud Realtime Database
  */
 export async function saveProjectsToCloud(projects: any[]) {
@@ -85,7 +103,8 @@ export async function saveProjectsToCloud(projects: any[]) {
   if (!db) return false;
   try {
     const docRef = doc(db, "cms", "projects_data");
-    await setDoc(docRef, { projects, updatedAt: new Date().toISOString() });
+    const safe = sanitizeForFirestore(projects);
+    await setDoc(docRef, { projects: safe, updatedAt: new Date().toISOString() });
     setCloudStatus(true);
     return true;
   } catch (err: any) {

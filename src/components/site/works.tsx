@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowUpRight,
@@ -581,8 +581,38 @@ function ProjectVideoPlayer({
 }) {
   const playableUrl = usePlayableVideoUrl(videoUrl);
   const [hasError, setHasError] = useState(false);
+  const [isInView, setIsInView] = useState(controls); // for modal (controls=true) load immediately
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+
   const src = playableUrl || videoUrl;
   const embedUrl = getEmbedUrl(src);
+
+  // IntersectionObserver: only load/play when card is actually visible
+  React.useEffect(() => {
+    if (controls) return; // modal always loads immediately
+    const el = wrapperRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            if (autoPlay && videoRef.current) {
+              videoRef.current.play().catch(() => {});
+            }
+          } else {
+            if (!controls && videoRef.current) {
+              videoRef.current.pause();
+            }
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [autoPlay, controls]);
 
   if (embedUrl) {
     return (
@@ -618,26 +648,24 @@ function ProjectVideoPlayer({
   }
 
   return (
-    <video
-      src={src}
-      poster={posterImage}
-      controls={controls}
-      controlsList="nodownload noplaybackrate"
-      disablePictureInPicture
-      onContextMenu={(e) => e.preventDefault()}
-      onError={() => setHasError(true)}
-      autoPlay={autoPlay}
-      muted={!controls}
-      loop
-      playsInline
-      preload="auto"
-      style={{ transform: "translateZ(0)", willChange: "transform" }}
-      className={className}
-      ref={(el) => {
-        if (el && autoPlay) {
-          el.play().catch(() => {});
-        }
-      }}
-    />
+    <div ref={wrapperRef} className={`${className} relative`} style={{ display: "contents" }}>
+      <video
+        ref={videoRef}
+        src={isInView ? src : undefined}
+        poster={posterImage}
+        controls={controls}
+        controlsList="nodownload noplaybackrate"
+        disablePictureInPicture
+        onContextMenu={(e) => e.preventDefault()}
+        onError={() => setHasError(true)}
+        autoPlay={autoPlay && isInView}
+        muted={!controls}
+        loop
+        playsInline
+        preload={isInView ? "metadata" : "none"}
+        style={{ transform: "translateZ(0)", willChange: "transform" }}
+        className={className}
+      />
+    </div>
   );
 }
