@@ -3,9 +3,13 @@ import {
   getFirestore,
   doc,
   setDoc,
+  deleteDoc,
   onSnapshot,
+  collection,
+  writeBatch,
+  getDocs,
 } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getStorage } from "firebase/storage";
 
 // Firebase Configuration
 export const firebaseConfig = {
@@ -55,7 +59,10 @@ import { compressImageFile } from "./media-storage";
 /**
  * Uploads/Compresses a File into a 100% CORS-free Firestore Cloud URL.
  */
-export async function uploadMediaToFirebase(file: File | Blob, folderName: "images" | "videos" = "images"): Promise<string> {
+export async function uploadMediaToFirebase(
+  file: File | Blob,
+  folderName: "images" | "videos" = "images"
+): Promise<string> {
   try {
     const compressedUrl = await compressImageFile(file);
     return compressedUrl;
@@ -78,8 +85,8 @@ export function getCloudStatus(): boolean {
 }
 
 /**
- * Recursively removes undefined fields from an object so Firestore never
- * throws "Unsupported field value: undefined".
+ * Recursively removes undefined fields so Firestore never throws
+ * "Unsupported field value: undefined".
  */
 function sanitizeForFirestore(obj: any): any {
   if (Array.isArray(obj)) return obj.map(sanitizeForFirestore);
@@ -87,7 +94,7 @@ function sanitizeForFirestore(obj: any): any {
     const clean: Record<string, any> = {};
     for (const key of Object.keys(obj)) {
       const val = obj[key];
-      if (val === undefined) continue; // drop undefined fields
+      if (val === undefined) continue;
       clean[key] = sanitizeForFirestore(val);
     }
     return clean;
@@ -96,21 +103,89 @@ function sanitizeForFirestore(obj: any): any {
 }
 
 /**
- * Save Projects to Firebase Cloud Realtime Database
+ * Strips base64 data: URLs from a project before cloud upload.
+ * Data URLs can be hundreds of KB each. Only short https:// URLs are kept.
+ * The original data URL stays in localStorage for the local admin session.
  */
-export async function saveProjectsToCloud(projects: any[]) {
+function stripBlobsForCloud(project: any): any {
+  const MAX_FIELD_BYTES = 50_000; // 50 KB per field max
+  const safe = { ...project };
+
+  for (const key of ["image", "videoUrl"] as const) {
+    const val = safe[key];
+    if (typeof val === "string") {
+      // Drop data: URLs and blob: URLs — they are local-only
+      if (val.startsWith("data:") || val.startsWith("blob:")) {
+        delete safe[key];
+      } else if (val.length > MAX_FIELD_BYTES) {
+        // Truncate any other suspiciously long strings
+        delete safe[key];
+      }
+    }
+  }
+  return safe;
+}
+
+/**
+ * Save all projects to Firestore — one document per project.
+ * This avoids Firestore's 1 MB per-document limit entirely.
+ * Also writes a lightweight index document listing all project IDs and order.
+ */
+export async function saveProjectsToCloud(projects: any[]): Promise<boolean> {
   const db = getDb();
   if (!db) return false;
+
   try {
-    const docRef = doc(db, "cms", "projects_data");
-    const safe = sanitizeForFirestore(projects);
-    await setDoc(docRef, { projects: safe, updatedAt: new Date().toISOString() });
+    const batch = writeBatch(db);
+
+    // Write each project as its own document under cms_projects/{id}
+    for (const project of projects) {
+      const stripped = stripBlobsForCloud(project);
+      const safe = sanitizeForFirestore(stripped);
+      const docRef = doc(db, "cms_projects", String(safe.id || `p_${Date.now()}`));
+      batch.set(docRef, { ...safe, _updatedAt: new Date().toISOString() });
+    }
+
+    // Write a lightweight index so listeners can reconstruct order
+    const indexRef = doc(db, "cms", "projects_index");
+    batch.set(indexRef, {
+      ids: projects.map((p) => String(p.id)),
+      updatedAt: new Date().toISOString(),
+    });
+
+    await batch.commit();
     setCloudStatus(true);
     return true;
   } catch (err: any) {
-    console.warn("Firebase Cloud Save Note:", err);
-    setCloudStatus(false);
-    return false;
+    // Firestore batches are limited to 500 ops — fall back to sequential writes
+    console.warn("Batch write failed, falling back to sequential:", err.code);
+    try {
+      for (const project of projects) {
+        const stripped = stripBlobsForCloud(project);
+        const safe = sanitizeForFirestore(stripped);
+        const docRef = doc(db, "cms_projects", String(safe.id || `p_${Date.now()}`));
+        await setDoc(docRef, { ...safe, _updatedAt: new Date().toISOString() });
+      }
+      setCloudStatus(true);
+      return true;
+    } catch (e: any) {
+      console.warn("Firebase Cloud Save Note:", e.message);
+      setCloudStatus(false);
+      return false;
+    }
+  }
+}
+
+/**
+ * Delete a single project from the cloud collection.
+ */
+export async function deleteProjectFromCloud(projectId: string): Promise<void> {
+  const db = getDb();
+  if (!db) return;
+  try {
+    await deleteDoc(doc(db, "cms_projects", projectId));
+  } catch (e) {
+    console.warn("Cloud delete note:", e);
   }
 }
 
@@ -132,7 +207,8 @@ export async function saveCategoriesToCloud(categories: string[]) {
 }
 
 /**
- * Listen for Real-Time Project Updates across all computers and browsers worldwide
+ * Listen for Real-Time Project Updates — subscribes to the cms_projects collection.
+ * Each document is a project. Uses the index doc for ordering.
  */
 export function subscribeToCloudProjects(callback: (projects: any[]) => void) {
   if (typeof window === "undefined") return () => {};
@@ -140,14 +216,26 @@ export function subscribeToCloudProjects(callback: (projects: any[]) => void) {
   if (!db) return () => {};
 
   try {
-    const docRef = doc(db, "cms", "projects_data");
+    const colRef = collection(db, "cms_projects");
     return onSnapshot(
-      docRef,
+      colRef,
       (snapshot) => {
-        if (snapshot.exists() && snapshot.data()?.projects) {
-          setCloudStatus(true);
-          callback(snapshot.data().projects);
-        }
+        if (snapshot.empty) return;
+        // Reconstruct array sorted by _updatedAt descending (newest first)
+        const projects = snapshot.docs
+          .map((d) => {
+            const data = d.data();
+            // Remove internal Firestore metadata field
+            const { _updatedAt, ...project } = data;
+            return project;
+          })
+          .sort((a, b) => {
+            // Sort by createdAt descending
+            return (b.createdAt || "").localeCompare(a.createdAt || "");
+          });
+
+        setCloudStatus(true);
+        callback(projects);
       },
       (err) => {
         console.warn("Firebase cloud stream note:", err);

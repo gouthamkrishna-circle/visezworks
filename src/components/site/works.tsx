@@ -581,34 +581,31 @@ function ProjectVideoPlayer({
 }) {
   const playableUrl = usePlayableVideoUrl(videoUrl);
   const [hasError, setHasError] = useState(false);
-  const [isInView, setIsInView] = useState(controls); // for modal (controls=true) load immediately
+  const [isInView, setIsInView] = useState(controls);
+  const [isBuffering, setIsBuffering] = useState(true);
   const videoRef = React.useRef<HTMLVideoElement>(null);
-  const wrapperRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   const src = playableUrl || videoUrl;
   const embedUrl = getEmbedUrl(src);
 
-  // IntersectionObserver: only load/play when card is actually visible
+  // IntersectionObserver: load src only when scrolled into viewport
   React.useEffect(() => {
-    if (controls) return; // modal always loads immediately
-    const el = wrapperRef.current;
+    if (controls) { setIsInView(true); return; }
+    const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsInView(true);
-            if (autoPlay && videoRef.current) {
-              videoRef.current.play().catch(() => {});
-            }
+            if (autoPlay && videoRef.current) videoRef.current.play().catch(() => {});
           } else {
-            if (!controls && videoRef.current) {
-              videoRef.current.pause();
-            }
+            if (videoRef.current && !controls) videoRef.current.pause();
           }
         });
       },
-      { threshold: 0.2 }
+      { threshold: 0.15, rootMargin: "100px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -627,20 +624,15 @@ function ProjectVideoPlayer({
   }
 
   if (hasError || !src || (src.startsWith("vid-") && !playableUrl)) {
-    if (posterImage) {
-      return <img src={posterImage} alt="Video preview poster" className={className} />;
-    }
+    if (posterImage) return <img src={posterImage} alt="Video preview" className={className} />;
     return (
-      <div className="size-full bg-gradient-to-br from-secondary/80 to-background flex items-center justify-center p-6 text-center border border-border/40 rounded-lg">
+      <div className="size-full bg-gradient-to-br from-secondary/80 to-background flex items-center justify-center p-6 text-center">
         <div className="space-y-2">
-          <div className="size-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto text-primary font-bold shadow-sm">
+          <div className="size-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto">
             <Play className="size-4 fill-primary ml-0.5" />
           </div>
-          <p className="font-bebas text-sm uppercase text-foreground tracking-wider">
-            Video Preview
-          </p>
-          <p className="text-[11px] text-muted-foreground max-w-xs">
-            Add a thumbnail image or public video URL in Admin Panel for global viewing.
+          <p className="font-bebas text-xs uppercase text-muted-foreground tracking-wider">
+            Set a video URL in Admin Panel
           </p>
         </div>
       </div>
@@ -648,7 +640,24 @@ function ProjectVideoPlayer({
   }
 
   return (
-    <div ref={wrapperRef} className={`${className} relative`} style={{ display: "contents" }}>
+    <div ref={containerRef} className="relative size-full">
+      {/* Poster shown instantly while video buffers */}
+      {posterImage && isBuffering && (
+        <img
+          src={posterImage}
+          alt="Video loading preview"
+          className="absolute inset-0 size-full object-cover z-10"
+          style={{ pointerEvents: "none" }}
+        />
+      )}
+
+      {/* Buffering spinner — only visible when no poster but still loading */}
+      {!posterImage && isBuffering && isInView && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-secondary/80">
+          <div className="size-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+        </div>
+      )}
+
       <video
         ref={videoRef}
         src={isInView ? src : undefined}
@@ -657,14 +666,14 @@ function ProjectVideoPlayer({
         controlsList="nodownload noplaybackrate"
         disablePictureInPicture
         onContextMenu={(e) => e.preventDefault()}
-        onError={() => setHasError(true)}
-        autoPlay={autoPlay && isInView}
+        onError={() => { setHasError(true); setIsBuffering(false); }}
+        onCanPlay={() => { setIsBuffering(false); if (autoPlay && isInView) videoRef.current?.play().catch(() => {}); }}
         muted={!controls}
         loop
         playsInline
         preload={isInView ? "metadata" : "none"}
         style={{ transform: "translateZ(0)", willChange: "transform" }}
-        className={className}
+        className={`${className} ${isBuffering && posterImage ? "opacity-0" : "opacity-100"} transition-opacity duration-500`}
       />
     </div>
   );
