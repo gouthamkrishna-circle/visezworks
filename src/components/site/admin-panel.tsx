@@ -51,7 +51,7 @@ import {
   ProjectVisibility,
 } from "@/lib/admin-store";
 
-const ADMIN_PASSCODE = "admin123";
+const ADMIN_PASSCODE = "Visez12345";
 
 export function AdminPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -413,7 +413,7 @@ export function AdminPanel() {
                   <p className="mt-1.5 text-xs text-destructive flex items-center gap-1 font-mono">
                     <X className="size-3" /> Incorrect passcode. Try{" "}
                     <code className="bg-muted px-1 py-0.5 rounded text-primary font-bold">
-                      admin123
+                      *****
                     </code>
                   </p>
                 )}
@@ -431,7 +431,7 @@ export function AdminPanel() {
             <div className="mt-6 border-t border-border pt-4 text-center">
               <p className="font-mono text-[10px] text-muted-foreground">
                 Tip: Default demo passcode is{" "}
-                <span className="font-semibold text-primary">admin123</span>
+                <span className="font-semibold text-primary">*******</span>
               </p>
             </div>
           </motion.div>
